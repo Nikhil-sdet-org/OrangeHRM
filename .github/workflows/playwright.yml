@@ -1,0 +1,91 @@
+name: Playwright Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Nightly at 02:00 UTC: catches changes on the demo site even when nobody pushes
+    - cron: '0 2 * * *'
+
+# A newer push to the same branch or PR supersedes the run in progress
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Not secret: the target environment. Credentials come from repo secrets below.
+  BASE_URL: https://opensource-demo.orangehrmlive.com
+  TEST_USERNAME: ${{ secrets.TEST_USERNAME }}
+  TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
+
+jobs:
+  api:
+    name: API tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Playwright strips types without checking them; this is the only static check
+      - name: Typecheck
+        run: npm run typecheck
+
+      # The api project launches no browser, so none is installed
+      - name: Run API tests
+        run: npx playwright test --project=api
+
+      - name: Upload HTML report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-api
+          path: playwright-report/
+          retention-days: 30
+
+  ui:
+    name: UI tests (Chromium)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run UI tests
+        run: npx playwright test --project=chromium
+
+      - name: Upload HTML report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-ui
+          path: playwright-report/
+          retention-days: 30
+
+      # Traces, screenshots and videos of failed tests
+      - name: Upload test results
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-ui
+          path: test-results/
+          retention-days: 7

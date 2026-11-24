@@ -1,0 +1,31 @@
+{
+  "name": "orangehrm",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "playwright test",
+    "ui": "playwright test --ui",
+    "headed": "playwright test --headed",
+    "debug": "playwright test --debug",
+    "codegen": "playwright codegen $BASE_URL",
+    "report": "playwright show-report",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@faker-js/faker": "^9.9.0",
+    "@playwright/cli": "^0.1.25",
+    "@playwright/test": "^1.65.1",
+    "@types/node": "^26.6.6",
+    "dotenv": "^16.6.1",
+    "playwright": "^1.65.1",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "ajv": "^8.20.0"
+  }
+}
